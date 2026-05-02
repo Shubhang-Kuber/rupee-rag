@@ -1,0 +1,5 @@
+langchain
+langchain-google-genai
+yfinance
+duckduckgo-search
+python-dotenv
