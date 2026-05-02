@@ -23,12 +23,28 @@ def get_stock_price(ticker: str) -> str:
     '.NS' to NSE ticker symbols before calling this tool (e.g., RELIANCE ->
     RELIANCE.NS).
     """
-    history = yf.Ticker(ticker).history(period="5d")
-    if history.empty:
-        return "INR 0.00"
+    def _latest_close(symbol: str) -> float | None:
+        history = yf.Ticker(symbol).history(period="5d", auto_adjust=False)
+        if history.empty:
+            return None
+        closes = history["Close"].dropna()
+        if closes.empty:
+            return None
+        return float(closes.iloc[-1])
 
-    latest_close = history["Close"].dropna().iloc[-1]
-    return f"INR {latest_close:.2f}"
+    raw = ticker.strip().upper()
+    candidates = [raw]
+    if "." not in raw:
+        candidates = [f"{raw}.NS", f"{raw}.BO", raw]
+    elif raw.endswith(".NS"):
+        candidates = [raw, raw.replace(".NS", ".BO")]
+
+    for symbol in candidates:
+        latest_close = _latest_close(symbol)
+        if latest_close is not None:
+            return f"INR {latest_close:.2f}"
+
+    return "INR 0.00 (price unavailable)"
 
 
 @tool
