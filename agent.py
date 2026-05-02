@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import os
+
 from dotenv import load_dotenv
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.agents import create_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from tools import my_tools
@@ -10,19 +11,15 @@ from tools import my_tools
 
 load_dotenv()
 
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest")
+model_name = os.getenv("GOOGLE_MODEL", "gemini-flash-latest")
+llm = ChatGoogleGenerativeAI(model=model_name)
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are an expert Indian financial researcher. Provide concise, "
-            "well-reasoned answers and use tools when needed.",
-        ),
-        ("user", "{input}"),
-        MessagesPlaceholder(variable_name="agent_scratchpad"),
-    ]
+agent_executor = create_agent(
+    model=llm,
+    tools=my_tools,
+    system_prompt=(
+        "You are an expert Indian financial researcher. Provide concise, "
+        "well-reasoned answers and use tools when needed."
+    ),
+    debug=True,
 )
-
-agent = create_tool_calling_agent(llm, my_tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=my_tools, verbose=True)
